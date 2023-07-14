@@ -1,0 +1,20 @@
+li {
+    list-style-type: none;
+}
+ul {
+    margin-left: 0;
+    padding-left: 0;
+}
+td {
+    vertical-align:top;
+    width:50%;
+    border:none;
+}
+td b {
+    font-size:20px;
+}
+li a:hover, li a:focus {
+    color: #069;;
+    text-decoration: underline;
+    font-weight: normal;
+}

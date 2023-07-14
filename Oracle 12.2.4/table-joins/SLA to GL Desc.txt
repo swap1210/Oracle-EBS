@@ -1,0 +1,205 @@
+SELECT apl.application_name, xah.je_category_name,xev.EVENT_TYPE_CODE, xte.*
+  FROM xla.xla_transaction_entities xte,
+       xla.xla_events xev,
+       xla.xla_ae_headers xah,
+       xla.xla_ae_lines xal,
+       apps.fnd_application_vl apl
+ WHERE xev.entity_id = xte.entity_id
+   AND xah.entity_id = xte.entity_id
+   AND xah.event_id = xev.event_id
+   AND xah.ae_header_id = xal.ae_header_id
+   AND xte.application_id = apl.application_id
+   AND xah.gl_transfer_status_code = 'Y'
+   AND xah.accounting_date > TO_DATE ('25-JUL-2017', 'DD-MON-YYYY')
+   AND xah.accounting_date < TO_DATE ('30-JUL-2017', 'DD-MON-YYYY')
+   AND xah.application_id = apl.application_id
+   AND xev.application_id = apl.application_id
+   AND xah.je_category_name IN ('Inventory', 'WIP', 'Receiving')
+   AND xah.ledger_id = 3
+   AND xte.source_id_int_2 = 229
+   AND apl.application_id = 707;
+
+SELECT   SUM (xal.accounted_cr), SUM (xal.accounted_dr), aia.invoice_amount,
+         invoice_num
+    FROM ap_invoices_all aia,
+         xla.xla_transaction_entities xte,
+         xla_ae_headers xah,
+         xla_ae_lines xal,
+         gl.gl_import_references gir,
+         gl_je_lines gjl,
+         gl_je_headers gjh
+   WHERE 1 = 1
+     AND aia.invoice_id = NVL ("SOURCE_ID_INT_1", (-99))
+     AND xte.entity_code = 'AP_INVOICES'
+     AND xte.application_id = 200
+     AND xte.entity_id = xah.entity_id
+     AND xah.ae_header_id = xal.ae_header_id
+     AND xal.gl_sl_link_id = gir.gl_sl_link_id
+     AND xal.gl_sl_link_table = gir.gl_sl_link_table
+     AND gir.je_header_id = gjl.je_header_id
+     AND gir.je_line_num = gjl.je_line_num
+     AND gjl.je_header_id = gjh.je_header_id
+     AND aia.invoice_num = 'INVNO4567'   --Invoice Num
+GROUP BY aia.invoice_num, aia.invoice_amount;
+
+
+SELECT b.NAME batch_name, 
+                 b.description batch_description,
+                 h.je_category, 
+                 h.je_source,
+                 h.period_name je_period_name, 
+                 h.NAME journal_name,
+                 h.status journal_status, 
+                 h.description je_description,
+                 l.je_line_num line_number    
+FROM gl_je_batches b,
+             gl_je_headers h,
+             gl_je_lines l,
+             gl_code_combinations_kfv glcc,
+             gl_import_references gir,
+             xla_ae_lines xlal,
+             xla_ae_headers xlah,
+             xla_events xlae,
+             xla.xla_transaction_entities xlate,
+             ra_customer_trx_all rct,
+WHERE b.je_batch_id = h.je_batch_id
+AND h.je_header_id = l.je_header_id
+AND xlal.code_combination_id = glcc.code_combination_id
+AND l.je_header_id = gir.je_header_id
+AND l.je_line_num = gir.je_line_num
+AND gir.gl_sl_link_table = xlal.gl_sl_link_table
+AND gir.gl_sl_link_id = xlal.gl_sl_link_id
+AND xlal.ae_header_id = xlah.ae_header_id
+AND xlah.event_id = xlae.event_id
+AND xlae.entity_id = xlate.entity_id
+AND xlae.application_id = xlate.application_id
+AND h.je_source = 'Receivables'
+AND h.period_name = '2009-10'
+AND rct.trx_number = xlate.transaction_number
+AND xlate.transaction_number =':P_TRX_NUMBER
+
+
+
+
+Subledger Accounting In Detail
+Subledger Accounting
+
+About SLA:
+1.SLA is an intermediate step between subledger products and the Oracle General Ledger
+2.Journal entries are created in Subledger Accounting and then transferred to Oracle General Ledger
+
+
+Tables that are involved in this process are
+XLA_TRANSACTION_ENTITIES
+XLA_EVENTS
+XLA_AE_HEADERS
+XLA_AE_LINES
+GL_IMPORT_REFERENCES
+GL_JE_LINES
+GL_JE_HEADERS
+GL_BALANCES
+NOTE: For every transaction, it will create an entity_id in xla_transaction_entities table. This column we use to make link between transaction entities and xla ae headers table. By default at first time for an entity, one event will be there. Suppose for the same transaction (means for same entity), if we create any adjustment or some other thing, that we treat it as an event. So for one entity there will be more events.
+
+Links Between these tables
+GL_JE_LINES (JE_HEADER_ID, JE_LINE_NUM)   
+GL_IMPORT_REFERENCES (JE_HEADER_ID, JE_LINE_NUM)
+GL_IMPORT_REFERENCES (GL_SL_LINK_TABLE, GL_SL_LINK_ID
+XLA_AE_LINES (GL_SL_LINK_TABLE, GL_SL_LINK_ID)
+XLA_AE_LINES (APPLICAITON_ID, AE_HEADER_ID)
+XLA_AE_HEADERS (APPLICATION_ID, AE_HEADER_ID)
+XLA_AE_HEADERS (APPLICATION_ID, EVENT_ID)
+XLA_EVENTS (APPLICATION_ID, EVENT_ID)
+XLA_EVENTS (APPLICATION_ID, ENTITY_ID)
+XLA_TRANSACTION_ENTITIES (APPLICATION_ID, ENTITY_ID)
+
+Draft : Draft will create journal entries, which are not final, which means they are not ready to be transferred to GL.
+You can create accounting on this transaction again and again, which will delete the old journal entries and create new ones. You can’t transfer these journal entries to GL.
+xla_events.process_status_code = D
+xla_events.event_status_code = U
+xla_ae_headers.accounting_entry_status_code = D
+Final : Final will create journal entries, which can be transferred to GL. Once it is finally accounted you can’t run create accounting on the particular transaction (specifically on that event).
+Run Transfer Journal Entries to GL program
+xla_events.process_status_code = P
+xla_events.event_status_code = P
+xla_ae_headers.accounting_entry_status_code = F
+Final Post: Final Post will create journal entries in final mode, transfer them to GL and post them.
+xla_ae_headers.accounting_entry_status_code = F
+xla_ae_headers.transfer_status_code = Y
+xla_events.process_status_code = P
+xla_events.event_status_code = P
+============================================================
+
+In R12 we can't find any references columns. Where as in R11 we have
+Invoice numbers, Suppliers/Customer details in GL tables as references
+columns.
+
+So in R12 new module XLA introduced , XLA tables don't store any direct
+references.
+
+First we have to check the transactions in xla_transaction_entities, where
+source_id_int_1 stores the ID value of transactions. So based on the
+transaction we have to map the appropriate modules
+
+See the below examples .
+
+AP Invoices
+
+where xla_transaction_entities.source_id_int_1 = ap_invoices_all.invoice_id
+
+and entity_code = 'AP_INVOICES'
+
+AP Payments
+
+where xla_transaction_entities.source_id_int_1 = ap_checks_All.check_id
+
+and xte.entity_code = 'AP_PAYMENTS'
+
+AR Invoice
+
+where xla_transaction_entities.source_id_int_1 =
+ra_customer_trx_all.customer_trx_id
+
+and xte.entity_code = 'TRANSACTIONS'
+
+AR Receipt
+
+where xla_transaction_entities.source_id_int_1
+=ar_cash_receipts_all.CASH_RECEIPT_ID
+
+This is the way we have to map all modules based on entity_code.
+
+==============================================================
+
+
+Technical details of Drilldown from GL to Sub Modules
+February 13, 2014   //    No Comment
+This article explains you the technical reference for journal import and drilldown functionalities, which will help in understanding the SLA architecture and helps you in troubleshooting of Support issues.
+
+Drilldown from General Ledger takes us to the SLA Journal details.
+
+The technical flow for this is as follows:
+
+Drilldown is performed from Journal lines in General Ledger. This data is stored in the table GL_JE_LINES. The link between SLA data and data in GL is through the table GL_IMPORT_REFERENCES.
+
+Note that data is populated in GL_IMPORT_REFERENCES only if  ‘Import References’ option is selected in the Journal source definition. The data can be mapped from GL_JE_LINES to GL_IMPORT_REFERENCES table using the columns je_header_id and je_lines_num.
+
+The SLA Journal line data is stored in the table XLA_AE_LINES and header details are stored in XLA_AE_HEADERS.
+The data in GL_IMPORT_REFERENCES can be mapped to XLA_AE_LINES using the columns gl_sl_link_id and gl_sl_link_table.
+
+GL to Submodules Drilldown
+
+Important points to note:
+
+Data can be transferred from SLA to GL in either Summary or Detail mode. This option is defined for the Event Class, which is attached to the Journal Line Type. Journal Line Type is then attached to the Journal Line Definition, which is finally attached to the Subledger Accounting Method. Please note that if the transfer is done in Summary mode, then the Reference columns will not be populated in either GL_IMPORT_REFERENCES or GL_JE_LINES.
+Data from SLA, which comes to GL_INTERFACE, can then be imported in either Summary or Detail Mode. This option is set while defining the Ledger in the Accounting Setup Manager.
+Please note that irrespective of the Mode of Transfer (Detail or Summary), Drilldown will work from GL to all the Subledgers that are using the SLA Engine. The subledger reference information required to drilldown is taken from the SLA tables XLA_AE_HEADERS and XLA_AE_LINES, and not in GL_JE_LINES or GL_IMPORT_REFERENCES.
+Due to patch# 7512923:R12.XLA.A, the reference columns REFERENCE5 to REFERENCE10 are populated with entity_id, event_id, ae_header_id, ae_line_num, accounted_cr and accounted_dr. You need to apply this patch if you want to see Line References on Account Inquiry -> Journal Detail.
+To identify the mode of Transfer:
+
+Column gl_transfer_mode_code in XLA_AE_LINES indicates the transfer mode from SLA to GL. For this column, value ‘S’ indicates that the transfer is done in Summary mode while ‘D’ indicates that the transfer is in Detail mode.
+For the Journal Import mode, the values for specific applications is stored in the table XLA_LEDGER_OPTIONS. This table stores the setup for various applications for the Ledgers defined. The column indicating the Journal Import mode, is transfer_to_gl_mode_code. The values are:
+P : Summarized by Period
+A : Summarized by Accounting Date
+
+
+D : No Summarization i.e Detail mode

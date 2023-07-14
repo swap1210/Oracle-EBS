@@ -1,0 +1,190 @@
+1) BOM :
+
+BOM_RESOURCES (BR)
+BOM_BILL_OF_MATERIALS (BBOM)
+BOM_DEPARTMENTS (BD)
+BOM_OPERATIONAL_ROUTINGS (BOR)
+BOM_OPERATION_SEQUENCES (BOS)
+BOM_OPERATION_SEQUENCES (BOS)
+BOM_INVENTORY_COMPONENTS (BIC)
+BOM_STANDARD_OPERATIONS (BSO)
+
+2) INV : 
+
+MTL_PARAMETERS (MP)
+MTL_SYSTEM_ITEMS_B (MSIB)
+MTL_MATERIAL_TRANSACTION (MTT)
+MTL_SERIAL_NUMBERS (MSN)
+MTL_ITEM_REVISIONS (MIR)
+MTL_ITEM_CATEGORIES (MIC)
+MTL_DEMAND (MD)
+MTL_TRANSACTION_TYPES (MTTY)
+MTL_CATEGORIES (MC)
+CST_ITEM_COSTS (CIC)
+CST_COST_ELEMENTS (CCE)
+
+3) WIP :
+
+WIP_PARAMETERS (WP)
+WIP_DISCRETE_JOBS (WDJ)
+WIP_ENTITIES (WE)
+WIP_OPERATIONS (WO)
+WIP_REQUIREMENT_OPERATIONS (WRO)
+WIP_OPERATION_RESOURCES (WOR)
+WIP_TRANSACTIONS (WT)
+WIP_TRANSACTION_ACCOUNTS (WTA)
+WIP_LINES (WL)
+WIP_EAM_WORK_REQUESTS (WEWR)
+WIP_EAM_PARAMETERS (WEP)
+
+
+1) JOINS IN BOM and BOM-INV
+
+BOM_BILL_OF_MATERIALS (BBOM)                       MTL_SYSTEM_ITEMS_B (MSIB)
+
+organization_id                                                                  organization_id
+assembly_item_id                                                              inventory_item_id
+
+MTL_SYSTEM_ITEMS_B (MSIB)                                BOM_OPERATIONAL_ROUTINGS (BOR)
+
+inventory_item_id                                                              assembly_item_id
+organization_id                                                                  organization_id
+
+BOM_BILL_OF_MATERIALS (BBOM)                       BOM_INVENTORY_COMPONENTS (BIC)
+
+bill_sequence_id                                                                bill_sequence_id
+
+BOM_INVENTORY_COMPONENTS (BIC)               MTL_SYSTEM_ITEMS_B (MSIB)
+
+component_item_id                                                           inventory_item_id
+
+BOM_OPERATIONAL_ROUTINGS(BOR)                  BOM_OPERATION_SEQUENCES(B0S)
+
+routing_sequence_id                                                          routing_sequence_id
+
+BOM_OPERATION_SEQUENCES (BOS)                   BOM_STANDARD_OPERATIONS (BSO)
+
+standard_operation_id                                                       standard_operation_id
+
+BOM_OPEARATION_SEQUENCES(BOS)                  BOM_DEPARTMENTS (BD)
+
+department_id                                                                   department_id
+
+BOM_DEPARTMENTS (BD)                                        BOM_DEPARTMENT_CLASSES
+
+department_id                                                                   department_id
+operation_sequence_id                                                      operation_sequence_id
+
+BOM_OPERATION_RESOURCE (BORE)                   BOM_RESOURCES (BR)
+
+resource_id                                                                       resource_id
+
+BOM_DEPARMTENTS (BD)                                         BOM_RESOURCES (BR)
+
+organization_id                                                                  organization_id 
+
+
+2) JOINS IN INV :
+
+MTL_SYSTEM_ITEMS_B (MSIB)                                 MTL_PARAMETERS (MP)
+
+organization_id                                                                   organization_id
+
+MTL_MATERIAL_TRANSACTION (MMT)                 MTL_TRANSACTION_TYPES (MTT)
+
+transaction_type_id                                                            transaction_type_id
+
+MTL_MATERIAL_TRANSACTION (MMT)                 MTL_ITEM_CATEGORIES (MIC)
+
+organization_id                                                                  organization_id
+inventory_item_id                                                              inventory_item_id
+
+MTL_MATERIAL_TRANSACTION (MMT)                MTL_SYSTEM_ITEMS_B(MSIB)
+
+inventory_item_id                                                              inventory_item_id
+
+MTL_TRANSACTION_TYPES (MTT)                         MTL_SYSTEM_ITEMS_B(MSIB)
+
+inventory_item_id                                                              inventory_item_id
+
+MTL_ITEM_REVISIONS(MIR)                                     MTL_SYSTEM_ITEMS_B(MSIB)
+
+inventory_item_id                                                              inventory_item_id
+organization_id                                                                  organization_id
+
+CST_ITEM_COSTS(CIC)                                              MTL_SYSTEM_ITEMS_B(MSIB)
+
+inventory_item_id                                                              inventory_item_id
+organization_id                                                                  organization_id
+
+MTL_ITEM_CATEGORIES (MIC)                                MTL_CATEGORIES (MC)
+
+category_id                                                                       category_id
+
+
+JOINS IN INV WITH OTHER MODULES :
+
+MTL_SYSTEM_ITEMS_B (MSIB)                                 RCV_TRANSACTIONS
+
+organization_id                                                                  organization_id
+
+MTL_SYSTEM_ITEMS_B (MSIB)                                 HR_EMPLOYEES
+
+buyer_id                                                                            employee_id
+
+
+
+3) JOINS IN WIP :
+
+WIP_ENTITIES (WE)                                                     WIP_TRANSACTIONS (WT)
+
+organization_id                                                                  organization_id
+wip_entity_id                                                                     wip_entity_id
+
+WIP_TRANSACTION_ACCOUNTS (WTA)                WIP_TRANSACTIONS (WT)
+
+transaction_id                                                                    transaction_id
+
+WIP_LINES (WL)                                                           WIP_TRANSACTIONS(WT)
+
+line_id                                                                                line_id
+
+WIP_DISCRETE_JOBS (WDJ)                                       WIP_ENTITIES (WE)
+
+wip_entity_id                                                                      wip_entity_id
+
+WIP_ENTITIES (WE)                                                       WIP_OPERATION_RESOURCES (WOR)
+
+wip_entity_id                                                                       wip_entity_id
+
+WIP_ENTITITES (WE)                                                     WIP_REQUIREMENT_OPERATIONS
+
+organization_id                                                                    organization_id
+
+WIP_ENTITIES                                                                 WIP_OPERATIONS
+
+wip_entity_id                                                                       wip_entity_id
+organization_id                                                                    organization_id
+
+JOINS IN WIP WITH OTHER MODULES
+
+WIP_TRANSACTION_ACCOUNTS (WTA)               PO_HEADERS_ALL (POH)
+
+po_header_id                                                                   po_header_id
+
+CST_COST_ELEMENTS (CSE)                                   WIP_TRANSACTION (WT)
+
+cst_element_id                                                                 cst_element_id
+
+WIP_OPERATIONS (WO)                                            BOM_DEPARTMENTS (BD)
+
+department_id                                                                  department_id
+
+WIP_ENTITIES (WE)                                                     MTL_SYSTEM_ITEMS_B (MSIB)
+
+organization_id                                                                  organization_id
+primary_item_id                                                                inventory_item_id
+
+WIP_OPERATION_RESOURCES (WOR)                    BOM_RESOURCES (BR)
+
+resource_id                                                                       resource_id
